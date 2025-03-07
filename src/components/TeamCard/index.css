@@ -1,0 +1,19 @@
+/* Write your CSS here */
+.iplDashboardContainer {
+  display: flex;
+  align-items: center;
+  /* opacity: 0.2; */
+  border: 2px solid #475569;
+  border-radius: 10px;
+  width: 350px;
+  padding: 10px;
+  gap: 10px;
+}
+Link {
+  color: #fff;
+  font-weight: bold;
+}
+.card {
+  color: #fff;
+  text-decoration: none;
+}
