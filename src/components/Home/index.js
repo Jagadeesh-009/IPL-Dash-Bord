@@ -17,6 +17,7 @@ class Home extends Component {
   }
 
   getIPLAllTeams = async () => {
+    this.setState({isLoading: true})
     const response = await fetch('https://apis.ccbp.in/ipl')
     if (response.ok) {
       // const statusCode = await response.statusCode
@@ -37,7 +38,7 @@ class Home extends Component {
     return (
       <div>
         {isLoading ? (
-          <div data-testid="loader" className="loader-container">
+          <div className="loader-container">
             <Loader type="Oval" color="#ffffff" height={50} />
           </div>
         ) : (

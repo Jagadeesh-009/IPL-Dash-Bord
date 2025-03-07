@@ -1,76 +1,7 @@
-// // Write your code here
-// import Loader from 'react-loader-spinner'
-// import {Component} from 'react'
-// import LatestMatch from '../LatestMatch'
-// import MatchCard from '../MatchCard'
-// import './index.css'
-
-// class TeamMatches extends Component {
-//   state = {
-//     isLoading: true,
-//     matchDetails: {},
-//   }
-
-//   componentDidMount() {
-//     this.getMatchDetails()
-//   }
-
-//   getMatchDetails = async () => {
-//     const {match} = this.props
-//     const {id} = match.params
-//     const response = await fetch(`https://apis.ccbp.in/ipl/${id}`)
-//     const data = await response.json()
-
-//     const formatedData = {
-//       teamBannerUrl: data.team_banner_url,
-//       latestMatchDetails: this.formatedMatchDetails(data.latest_match_details),
-//       recentMatches: data.recent_matches.map(matchs =>
-//         this.formatedMatchDetails(matchs),
-//       ),
-//     }
-//     this.setState({isLoading: false, matchDetails: formatedData})
-//   }
-
-//   formatedMatchDetails = match => ({
-//     id: match.id,
-//     competingTeam: match.competing_team,
-//     competingTeamLogo: match.competing_team_logo,
-//     date: match.date,
-//     venue: match.venue,
-//     result: match.result,
-//     umpires: match.umpires,
-//     manOfTheMatches: match.man_of_the_match,
-//     firstInnings: match.first_innings,
-//     secondInnings: match.second_innings,
-//     matchStatus: match.match_status,
-//   })
-
-//   render() {
-//     const {isLoading, matchDetails} = this.state
-
-//     return (
-//       <div className="TeamMatchesContainer">
-//         <img src={matchDetails.teamBannerUrl} alt="team banner" width="100%" />
-//         <h1 className="heading">Latest Match</h1>
-//         <div>
-//           <LatestMatch latestMatchDetailsIs={matchDetails.latestMatchDetails} />
-//         </div>
-//         <div>
-//           <ul className="recent-matches-list">
-//             {matchDetails.recentMatches.map(match => (
-//               <MatchCard key={match.id} matchDetails={match} />
-//             ))}
-//           </ul>
-//         </div>
-//       </div>
-//     )
-//   }
-// }
-
-// export default TeamMatches
-
 import {Component} from 'react'
+import {withRouter} from 'react-router-dom'
 import Loader from 'react-loader-spinner'
+import {PieChart, Pie, Cell, Legend, Tooltip} from 'recharts'
 
 import LatestMatch from '../LatestMatch'
 import MatchCard from '../MatchCard'
@@ -83,6 +14,7 @@ class TeamMatches extends Component {
   state = {
     isLoading: true,
     teamMatchesData: {},
+    matchStats: {won: 0, lost: 0, drawn: 0},
   }
 
   componentDidMount() {
@@ -103,6 +35,24 @@ class TeamMatches extends Component {
     matchStatus: data.match_status,
   })
 
+  calculateMatchStats = matches => {
+    let won = 0
+    let lost = 0
+    let drawn = 0
+
+    matches.forEach(match => {
+      if (match.matchStatus === 'Won') {
+        won += 1
+      } else if (match.matchStatus === 'Lost') {
+        lost += 1
+      } else {
+        drawn += 1
+      }
+    })
+
+    return {won, lost, drawn}
+  }
+
   getTeamMatches = async () => {
     const {match} = this.props
     const {params} = match
@@ -119,7 +69,13 @@ class TeamMatches extends Component {
       ),
     }
 
-    this.setState({teamMatchesData: formattedData, isLoading: false})
+    const matchStats = this.calculateMatchStats(formattedData.recentMatches)
+
+    this.setState({
+      teamMatchesData: formattedData,
+      matchStats,
+      isLoading: false,
+    })
   }
 
   renderRecentMatchesList = () => {
@@ -135,6 +91,43 @@ class TeamMatches extends Component {
     )
   }
 
+  renderPieChart = () => {
+    const {matchStats} = this.state
+    const data = [
+      {name: 'Won', value: matchStats.won},
+      {name: 'Lost', value: matchStats.lost},
+      {name: 'Drawn', value: matchStats.drawn},
+    ]
+
+    const COLORS = ['#4CAF50', '#F44336', '#FFEB3B']
+
+    return (
+      <div className="pie-chart-container">
+        <h2>Match Statistics</h2>
+        <PieChart width={300} height={300}>
+          <Pie
+            data={data}
+            cx={150}
+            cy={150}
+            innerRadius={60}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {data.map(entry => (
+              <Cell
+                key={entry.id || entry.name}
+                fill={COLORS[data.indexOf(entry) % COLORS.length]}
+              />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </div>
+    )
+  }
+
   renderTeamMatches = () => {
     const {teamMatchesData} = this.state
     const {teamBannerURL, latestMatch} = teamMatchesData
@@ -144,53 +137,40 @@ class TeamMatches extends Component {
         <img src={teamBannerURL} alt="team banner" className="team-banner" />
         <LatestMatch latestMatchData={latestMatch} />
         {this.renderRecentMatchesList()}
+        {this.renderPieChart()}
+        <div className="">
+          <button
+            type="button"
+            className="back-button"
+            onClick={this.handleBackClick}
+          >
+            Back
+          </button>
+        </div>
       </div>
     )
   }
 
   renderLoader = () => (
-    <div data-testid="loader" className="loader-container">
+    <div className="loader-container">
       <Loader type="Oval" color="#ffffff" height={50} />
     </div>
   )
 
-  getRouteClassName = () => {
-    const {match} = this.props
-    const {params} = match
-    const {id} = params
-
-    switch (id) {
-      case 'RCB':
-        return 'rcb'
-      case 'KKR':
-        return 'kkr'
-      case 'KXP':
-        return 'kxp'
-      case 'CSK':
-        return 'csk'
-      case 'RR':
-        return 'rr'
-      case 'MI':
-        return 'mi'
-      case 'SH':
-        return 'srh'
-      case 'DC':
-        return 'dc'
-      default:
-        return ''
-    }
+  handleBackClick = () => {
+    const {history} = this.props
+    history.push('/')
   }
 
   render() {
     const {isLoading} = this.state
-    const className = `team-matches-container ${this.getRouteClassName()}`
 
     return (
-      <div className={className}>
+      <div className="team-matches-container">
         {isLoading ? this.renderLoader() : this.renderTeamMatches()}
       </div>
     )
   }
 }
 
-export default TeamMatches
+export default withRouter(TeamMatches)
